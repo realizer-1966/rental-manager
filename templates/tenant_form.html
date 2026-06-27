@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}{{ '임차인 등록' if not tenant else '임차인 수정' }} - 임대관리{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <h4 class="mb-3">
+            <i class="bi bi-person-vcard"></i>
+            {{ '임차인 등록' if not tenant else '임차인 수정' }}
+        </h4>
+        <div class="card">
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">이름 *</label>
+                            <input type="text" name="name" class="form-control" required
+                                   value="{{ tenant.name if tenant else '' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">전화번호</label>
+                            <input type="text" name="phone" class="form-control"
+                                   value="{{ tenant.phone if tenant else '' }}" placeholder="010-1234-5678">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">이메일</label>
+                            <input type="email" name="email" class="form-control"
+                                   value="{{ tenant.email if tenant else '' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">주민/사업자번호</label>
+                            <input type="text" name="id_number" class="form-control"
+                                   value="{{ tenant.id_number if tenant else '' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">비상연락처</label>
+                            <input type="text" name="emergency_contact" class="form-control"
+                                   value="{{ tenant.emergency_contact if tenant else '' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">주소</label>
+                            <input type="text" name="address" class="form-control"
+                                   value="{{ tenant.address if tenant else '' }}">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">메모</label>
+                            <textarea name="memo" class="form-control" rows="2">{{ tenant.memo if tenant else '' }}</textarea>
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-lg"></i> 저장
+                            </button>
+                            <a href="{{ url_for('tenant_list') }}" class="btn btn-outline-secondary">취소</a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

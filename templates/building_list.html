@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}건물 목록 - 임대관리{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0"><i class="bi bi-building"></i> 건물 목록</h4>
+    <a href="{{ url_for('building_add') }}" class="btn btn-primary btn-sm">
+        <i class="bi bi-plus-lg"></i> 건물 등록
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        {% if buildings %}
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>건물명</th><th>유형</th><th>주소</th><th>층</th>
+                    <th>총 호수</th><th>임대중</th><th>공실</th><th>관리</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for b in buildings %}
+                <tr>
+                    <td><a href="{{ url_for('unit_list', bid=b.id) }}"><strong>{{ b.name }}</strong></a></td>
+                    <td><span class="badge bg-info text-dark">{{ b.type }}</span></td>
+                    <td class="small">{{ b.address or '-' }}</td>
+                    <td>{{ b.floors or '-' }}</td>
+                    <td>{{ b.unit_count }}</td>
+                    <td><span class="text-success">{{ b.occupied }}</span></td>
+                    <td><span class="text-warning">{{ b.vacant }}</span></td>
+                    <td>
+                        <a href="{{ url_for('building_repair_list', bid=b.id) }}" class="btn btn-outline-info btn-sm"
+                           title="건물 수리 내역">
+                            <i class="bi bi-tools"></i>
+                        </a>
+                        <a href="{{ url_for('building_edit', bid=b.id) }}" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <form method="POST" action="{{ url_for('building_delete', bid=b.id) }}" class="d-inline"
+                              onsubmit="return confirm('정말 삭제하시겠습니까?')">
+                            <button class="btn btn-outline-danger btn-sm"><i class="bi bi-trash"></i></button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="text-muted text-center my-4">
+            등록된 건물이 없습니다.<br>
+            <a href="{{ url_for('building_add') }}" class="btn btn-primary mt-2">건물 등록하기</a>
+        </p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

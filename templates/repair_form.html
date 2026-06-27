@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}수리 등록 - 임대관리{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-9">
+        <h4 class="mb-3">
+            <i class="bi bi-tools"></i> 수리 내역 등록
+            <small class="text-muted">{{ unit.building_name }} — {{ unit.unit_number }}호</small>
+        </h4>
+        <div class="card">
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">수리일 *</label>
+                            <input type="date" name="repair_date" class="form-control" value="{{ today_str }}" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">수리명 *</label>
+                            <input type="text" name="title" class="form-control" required
+                                   placeholder="예: 실내 전등 수리, 에어컨 수리">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">분류</label>
+                            <select name="category" class="form-select">
+                                <option value="전등">전등</option>
+                                <option value="에어컨">에어컨</option>
+                                <option value="보일러">보일러</option>
+                                <option value="도어록">도어록</option>
+                                <option value="배관">배관/수도</option>
+                                <option value="도배">도배/벽지</option>
+                                <option value="가전">가전</option>
+                                <option value="기타">기타</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">수리 비용 (원)</label>
+                            <input type="number" name="cost" class="form-control" value="0">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">수리업체 / 담당자</label>
+                            <input type="text" name="contractor" class="form-control"
+                                   placeholder="예: OO전기, 관리자 직접">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">상태</label>
+                            <select name="status" class="form-select">
+                                <option value="완료">완료</option>
+                                <option value="진행중">진행중</option>
+                                <option value="접수">접수</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">수리 사진</label>
+                            <input type="file" name="photo" class="form-control" accept="image/*" capture="environment">
+                            <small class="text-muted">수리 전후 사진 (jpg, png, webp)</small>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">상세 내용</label>
+                            <textarea name="memo" class="form-control" rows="3"
+                                      placeholder="수리 상세 내용, 교체 부품 등"></textarea>
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-lg"></i> 저장
+                            </button>
+                            <a href="{{ url_for('repair_list', uid=unit.id) }}" class="btn btn-outline-secondary">취소</a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

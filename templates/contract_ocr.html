@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block title %}계약서 OCR - 임대관리{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">
+        <i class="bi bi-card-text"></i> 계약서 OCR
+        <small class="text-muted">{{ contract.building_name }} — {{ contract.unit_number }} / {{ contract.tenant_name }}</small>
+    </h4>
+    <a href="{{ url_for('contract_view', cid=contract.id) }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i> 계약 상세
+    </a>
+</div>
+
+{% if raw_text %}
+<!-- OCR 결과 표시 -->
+<div class="row g-3">
+    <div class="col-md-5">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-image"></i> 업로드된 계약서</div>
+            <div class="card-body text-center">
+                <img src="{{ url_for('static', filename=photo_path) }}" class="img-fluid rounded" style="max-height:500px">
+            </div>
+        </div>
+    </div>
+    <div class="col-md-7">
+        <div class="card mb-3 border-success">
+            <div class="card-header bg-success text-white"><i class="bi bi-check-circle"></i> 추출된 항목</div>
+            <div class="card-body">
+                <table class="table table-sm table-bordered">
+                    <tbody>
+                        {% set labels = {
+                            'deposit': '보증금', 'monthly_rent': '월세', 'management_fee': '관리비',
+                            'cleaning_fee': '퇴실 청소비', 'extra_person_fee': '1인 추가 비용',
+                            'start_date': '계약시작일', 'end_date': '계약종료일',
+                            'payment_day': '납부일', 'tenant_name': '임차인명'
+                        } %}
+                        {% for key, label in labels.items() %}
+                        <tr>
+                            <th class="table-light" style="width:35%">{{ label }}</th>
+                            <td>
+                                {% if parsed[key] is not none %}
+                                <strong class="text-success">{{ parsed[key] | money if key in ['deposit','monthly_rent','management_fee','cleaning_fee','extra_person_fee'] else parsed[key] }}</strong>
+                                {% if key in ['deposit','monthly_rent','management_fee','cleaning_fee','extra_person_fee'] %}원{% endif %}
+                                {% else %}
+                                <span class="text-muted">추출 안됨</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                <form method="POST">
+                    <input type="hidden" name="action" value="apply">
+                    {# 파일 재전송을 위해 hidden으로 저장 #}
+                    <button type="submit" class="btn btn-success"
+                            onclick="return confirm('추출된 항목을 계약에 반영하시겠습니까? 기존 값이 덮어씌워집니다.')">
+                        <i class="bi bi-check-lg"></i> 계약에 반영
+                    </button>
+                    <a href="{{ url_for('contract_ocr', cid=contract.id) }}" class="btn btn-outline-secondary">재시도</a>
+                </form>
+                <p class="text-muted small mt-2">
+                    <i class="bi bi-info-circle"></i> OCR 결과가 부정확할 수 있습니다. 반영 후 계약 수정에서 확인/수정해 주세요.
+                </p>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><i class="bi bi-file-text"></i> OCR 원본 텍스트</div>
+            <div class="card-body">
+                <pre class="small" style="white-space:pre-wrap; max-height:300px; overflow-y:auto">{{ raw_text }}</pre>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<!-- 업로드 폼 -->
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-upload"></i> 계약서 사진 업로드</div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data">
+                    <input type="hidden" name="action" value="ocr">
+                    <div class="mb-3">
+                        <label class="form-label">계약서 사진 *</label>
+                        <input type="file" name="photo" class="form-control" accept="image/*" capture="environment" required>
+                        <small class="text-muted">jpg, png, webp / 카메라 직접 촬영 가능<br>
+                        선명하게 찍힌 계약서일수록 인식률이 높습니다.</small>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-card-text"></i> OCR 실행
+                    </button>
+                    <a href="{{ url_for('contract_view', cid=contract.id) }}" class="btn btn-outline-secondary">취소</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if ocr_records %}
+<div class="card mt-3">
+    <div class="card-header"><i class="bi bi-clock-history"></i> OCR 처리 이력</div>
+    <div class="card-body">
+        <table class="table table-sm">
+            <thead><tr><th>처리일</th><th>사진</th><th>추출 항목</th></tr></thead>
+            <tbody>
+                {% for r in ocr_records %}
+                <tr>
+                    <td>{{ r.ocr_date }}</td>
+                    <td>
+                        <a href="{{ url_for('static', filename=r.photo_path) }}" target="_blank" class="btn btn-outline-info btn-sm">
+                            <i class="bi bi-image"></i> 보기
+                        </a>
+                    </td>
+                    <td class="small">
+                        {% set data = r.parsed_data | tojson if r.parsed_data else '{}' %}
+                        {{ r.parsed_data[:100] if r.parsed_data else '-' }}...
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

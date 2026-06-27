@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block title %}수납 목록 - 임대관리{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0"><i class="bi bi-cash-stack"></i> 수납 관리</h4>
+    <a href="{{ url_for('payment_generate') }}" class="btn btn-primary btn-sm">
+        <i class="bi bi-magic"></i> 월별 청구 생성
+    </a>
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col-md-4">
+        <div class="card stat-card info">
+            <div class="card-body">
+                <div class="small text-muted">총 청구액</div>
+                <div class="h5 mb-0">{{ total_billed | money }}원</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stat-card success">
+            <div class="card-body">
+                <div class="small text-muted">총 수납액</div>
+                <div class="h5 mb-0 text-success">{{ total_paid | money }}원</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stat-card danger">
+            <div class="card-body">
+                <div class="small text-muted">미납액</div>
+                <div class="h5 mb-0 text-danger">{{ total_unpaid | money }}원</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<form class="mb-3" method="GET">
+    <div class="row g-2">
+        <div class="col-md-4">
+            <select name="status" class="form-select form-select-sm">
+                <option value="">전체 상태</option>
+                <option value="unpaid" {{ 'selected' if status_filter == 'unpaid' }}>미납</option>
+                <option value="partial" {{ 'selected' if status_filter == 'partial' }}>부분납</option>
+                <option value="paid" {{ 'selected' if status_filter == 'paid' }}>완납</option>
+                <option value="overdue" {{ 'selected' if status_filter == 'overdue' }}>연체</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <input type="month" name="month" class="form-control form-control-sm" value="{{ month_filter }}">
+        </div>
+        <div class="col-md-2">
+            <button class="btn btn-outline-secondary btn-sm w-100"><i class="bi bi-funnel"></i> 필터</button>
+        </div>
+        <div class="col-md-2">
+            <a href="{{ url_for('payment_list') }}" class="btn btn-outline-secondary btn-sm w-100">초기화</a>
+        </div>
+    </div>
+</form>
+
+<div class="card">
+    <div class="card-body">
+        {% if payments %}
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>청구월</th><th>건물</th><th>호수</th><th>임차인</th>
+                    <th>청구액</th><th>수납액</th><th>입금자</th><th>입금메모</th><th>납부기한</th><th>상태</th><th>수납</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in payments %}
+                <tr class="{{ 'table-danger' if p.status == 'overdue' else ('table-success' if p.status == 'paid' else '') }}">
+                    <td>{{ p.billing_month }}</td>
+                    <td>{{ p.building_name }}</td>
+                    <td><strong>{{ p.unit_number }}</strong></td>
+                    <td>{{ p.tenant_name }}</td>
+                    <td>{{ p.amount | money }}</td>
+                    <td>{{ p.paid_amount | money }}</td>
+                    <td class="small">{{ p.sender_name or '-' }}</td>
+                    <td class="small text-muted">{{ p.deposit_memo or '-' }}</td>
+                    <td>{{ p.due_date }}</td>
+                    <td>
+                        {% if p.status == 'paid' %}
+                        <span class="badge bg-success">완납</span>
+                        {% elif p.status == 'partial' %}
+                        <span class="badge bg-warning text-dark">부분납</span>
+                        {% elif p.status == 'unpaid' %}
+                        <span class="badge bg-secondary">미납</span>
+                        {% elif p.status == 'overdue' %}
+                        <span class="badge bg-danger">연체</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if p.status != 'paid' %}
+                        <a href="{{ url_for('payment_collect', pid=p.id) }}" class="btn btn-success btn-sm">
+                            <i class="bi bi-cash-coin"></i> 수납
+                        </a>
+                        {% else %}
+                        <span class="text-muted small">완납</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="text-muted text-center my-4">
+            수납 내역이 없습니다.<br>
+            <a href="{{ url_for('payment_generate') }}" class="btn btn-primary mt-2">월별 청구 생성하기</a>
+        </p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

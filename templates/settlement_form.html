@@ -1,0 +1,249 @@
+{% extends "base.html" %}
+{% block title %}퇴거 정산 - 임대관리{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <h4 class="mb-3">
+            <i class="bi bi-calculator"></i> 퇴거 정산
+            <small class="text-muted">{{ contract.building_name }} — {{ contract.unit_number }} / {{ contract.tenant_name }}</small>
+        </h4>
+
+        <div class="card mb-3">
+            <div class="card-header"><i class="bi bi-info-circle"></i> 계약 정보</div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <small class="text-muted">계약기간</small><br>
+                        <strong>{{ contract.start_date }} ~ {{ contract.end_date }}</strong>
+                    </div>
+                    <div class="col-md-3">
+                        <small class="text-muted">보증금</small><br>
+                        <strong>{{ contract.deposit | money }}원</strong>
+                        {% if deposit_paid is defined and deposit_paid > 0 %}
+                        <br><small class="text-success">납부 {{ deposit_paid | money }}원</small>
+                        {% if deposit_balance is defined and deposit_balance > 0 %}
+                        <br><small class="text-danger">잔액 {{ deposit_balance | money }}원</small>
+                        {% else %}
+                        <br><small class="text-success">완납</small>
+                        {% endif %}
+                        {% endif %}
+                    </div>
+                    <div class="col-md-2">
+                        <small class="text-muted">월세</small><br>
+                        <strong>{{ contract.monthly_rent | money }}원</strong>
+                    </div>
+                    <div class="col-md-2">
+                        <small class="text-muted">관리비</small><br>
+                        <strong>{{ contract.management_fee | money }}원</strong>
+                    </div>
+                    <div class="col-md-3">
+                        <small class="text-muted">퇴실 청소비 (계약서)</small><br>
+                        <strong>{{ contract.cleaning_fee | money }}원</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if payments %}
+        <div class="card mb-3">
+            <div class="card-header"><i class="bi bi-cash-stack"></i> 월세 수납 현황</div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    <thead><tr><th>청구월</th><th>청구액</th><th>수납액</th><th>잔액</th><th>상태</th></tr></thead>
+                    <tbody>
+                        {% for p in payments %}
+                        <tr>
+                            <td>{{ p.billing_month }}</td>
+                            <td>{{ p.amount | money }}</td>
+                            <td>{{ p.paid_amount | money }}</td>
+                            <td class="text-danger">{{ (p.amount - p.paid_amount) | money }}</td>
+                            <td>
+                                {% if p.status == 'paid' %}<span class="badge bg-success">완납</span>
+                                {% elif p.status == 'partial' %}<span class="badge bg-warning text-dark">부분납</span>
+                                {% elif p.status == 'unpaid' %}<span class="badge bg-secondary">미납</span>
+                                {% elif p.status == 'overdue' %}<span class="badge bg-danger">연체</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if meters %}
+        <div class="card mb-3">
+            <div class="card-header"><i class="bi bi-speedometer"></i> 계량기 기록</div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    <thead><tr><th>종류</th><th>구분</th><th>날짜</th><th>수치</th><th>사진</th></tr></thead>
+                    <tbody>
+                        {% for m in meters %}
+                        <tr>
+                            <td>{{ '전기' if m.type == 'electric' else '가스' }}</td>
+                            <td>{{ '입주' if m.reading_type == 'move_in' else '퇴거' }}</td>
+                            <td>{{ m.reading_date }}</td>
+                            <td>{{ m.meter_value or '-' }}</td>
+                            <td>
+                                {% if m.photo_path %}
+                                <a href="{{ url_for('static', filename=m.photo_path) }}" target="_blank" class="btn btn-outline-info btn-sm">
+                                    <i class="bi bi-image"></i> 보기
+                                </a>
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if utilities %}
+        <div class="card mb-3">
+            <div class="card-header"><i class="bi bi-receipt-cutoff"></i> 공과금 현황
+                {% if unpaid_utility_total > 0 %}
+                <span class="badge bg-danger">미납 {{ unpaid_utility_total | money }}원</span>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    <thead><tr><th>종류</th><th>청구월</th><th>금액</th><th>수납액</th><th>잔액</th><th>상태</th></tr></thead>
+                    <tbody>
+                        {% for u in utilities %}
+                        <tr>
+                            <td>{{ '전기' if u.type == 'electric' else '가스' }}</td>
+                            <td>{{ u.billing_month }}</td>
+                            <td>{{ u.amount | money }}</td>
+                            <td>{{ u.paid_amount | money }}</td>
+                            <td class="text-danger">{{ (u.amount - u.paid_amount) | money }}</td>
+                            <td>
+                                {% if u.status == 'paid' %}<span class="badge bg-success">완납</span>
+                                {% else %}<span class="badge bg-danger">미납</span>{% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if preview %}
+        <!-- 정산 결과 미리보기 -->
+        <div class="card mb-3 border-warning">
+            <div class="card-header bg-warning text-dark"><i class="bi bi-clipboard-check"></i> 정산 내역 (미리보기)</div>
+            <div class="card-body">
+                <table class="table table-bordered">
+                    <tbody>
+                        <tr><th class="table-light" style="width:30%">퇴거일</th><td>{{ preview.move_out_date }}</td></tr>
+                        <tr><th class="table-light">마지막 완납월</th><td>{{ preview.last_paid_month or '완납 내역 없음' }}
+                            {% if preview.last_paid_date %} (납부일: {{ preview.last_paid_date }}){% endif %}</td></tr>
+                        <tr><th class="table-light">일할 계산</th><td>{{ preview.days_used }}일 / 일일 {{ preview.daily_rent | money }}원 (월세/30일 기준)</td></tr>
+                        <tr><th class="table-light">일할 월세</th><td>{{ preview.prorated_rent | money }}원</td></tr>
+                        <tr><th class="table-light">일할 관리비</th><td>{{ preview.prorated_mgmt | money }}원</td></tr>
+                        <tr><th class="table-light">미납 월세</th><td class="text-danger">{{ preview.unpaid_amount | money }}원</td></tr>
+                        <tr><th class="table-light">미납 공과금</th><td class="text-danger">{{ preview.unpaid_utilities | money }}원</td></tr>
+                        <tr><th class="table-light">전기요금 정산</th><td>{{ preview.electric_bill | money }}원</td></tr>
+                        <tr><th class="table-light">가스요금 정산</th><td>{{ preview.gas_bill | money }}원</td></tr>
+                        <tr><th class="table-light">퇴실 청소비</th><td>{{ preview.cleaning_fee | money }}원</td></tr>
+                        {% if preview.extra_deduction > 0 %}
+                        <tr><th class="table-light">추가 공제</th><td class="text-danger">{{ preview.extra_deduction | money }}원</td></tr>
+                        {% endif %}
+                        <tr class="table-warning"><th>총 공제액</th><td><strong>{{ preview.total_owed | money }}원</strong></td></tr>
+                        <tr><th class="table-light">계약 보증금</th><td>{{ preview.deposit_contract | money }}원</td></tr>
+                        <tr><th class="table-light">실제 납부 보증금</th><td class="text-success">{{ preview.deposit_paid | money }}원
+                            {% if preview.deposit_contract != preview.deposit_paid %}
+                            <br><small class="text-danger">미납 {{ (preview.deposit_contract - preview.deposit_paid) | money }}원</small>
+                            {% endif %}
+                        </td></tr>
+                        <tr><th class="table-light">보증금 공제</th><td class="text-danger">- {{ preview.deposit_deduction | money }}원</td></tr>
+                        <tr class="{% if preview.final_settlement >= 0 %}table-success{% else %}table-danger{% endif %}">
+                            <th>최종 정산금</th>
+                            <td><strong class="h5">
+                                {% if preview.final_settlement >= 0 %}
+                                {{ preview.final_settlement | money }}원 (임대인 → 임차인 반환)
+                                {% else %}
+                                {{ (preview.final_settlement * -1) | money }}원 (임차인 → 임대인 추가 지급)
+                                {% endif %}
+                            </strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <form method="POST">
+                    <input type="hidden" name="action" value="confirm">
+                    <input type="hidden" name="move_out_date" value="{{ preview.move_out_date }}">
+                    <input type="hidden" name="deduction_reason" value="{{ preview.deduction_reason }}">
+                    <input type="hidden" name="extra_deduction" value="{{ preview.extra_deduction }}">
+                    <input type="hidden" name="electric_bill" value="{{ preview.electric_bill }}">
+                    <input type="hidden" name="gas_bill" value="{{ preview.gas_bill }}">
+                    <input type="hidden" name="cleaning_fee" value="{{ preview.cleaning_fee }}">
+                    <input type="hidden" name="memo" value="{{ preview.memo }}">
+                    <button type="submit" class="btn btn-danger"
+                            onclick="return confirm('정산을 확정하시겠습니까? 계약이 해지되고 호수가 공실로 변경됩니다.')">
+                        <i class="bi bi-check-circle-fill"></i> 정산 확정 및 계약 해지
+                    </button>
+                    <a href="{{ url_for('contract_settlement', cid=contract.id) }}" class="btn btn-outline-secondary">재계산</a>
+                </form>
+            </div>
+        </div>
+
+        {% else %}
+        <!-- 정산 입력 폼 -->
+        <div class="card">
+            <div class="card-header"><i class="bi bi-calculator"></i> 정산 입력</div>
+            <div class="card-body">
+                <form method="POST">
+                    <input type="hidden" name="action" value="preview">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">퇴거일 *</label>
+                            <input type="date" name="move_out_date" class="form-control" value="{{ today_str }}" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">전기요금 정산 (원)</label>
+                            <input type="number" name="electric_bill" class="form-control" value="0">
+                            <small class="text-muted">계량기 차액 기준 별도 입력</small>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">가스요금 정산 (원)</label>
+                            <input type="number" name="gas_bill" class="form-control" value="0">
+                            <small class="text-muted">계량기 차액 기준 별도 입력</small>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">퇴실 청소비 (원)</label>
+                            <input type="number" name="cleaning_fee" class="form-control"
+                                   value="{{ contract.cleaning_fee or 0 }}">
+                            <small class="text-muted">계약서 기재액 (수정 가능)</small>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">추가 공제액 (원)</label>
+                            <input type="number" name="extra_deduction" class="form-control" value="0">
+                            <small class="text-muted">수리비, 위약금 등</small>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">공제 사유</label>
+                            <input type="text" name="deduction_reason" class="form-control"
+                                   placeholder="예: 벽지 훼손, 수리비">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">메모</label>
+                            <textarea name="memo" class="form-control" rows="2"></textarea>
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-warning">
+                                <i class="bi bi-calculator"></i> 정산 계산 (미리보기)
+                            </button>
+                            <a href="{{ url_for('contract_view', cid=contract.id) }}" class="btn btn-outline-secondary">취소</a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% block title %}대시보드 - 임대관리{% endblock %}
+{% block content %}
+<h4 class="mb-4"><i class="bi bi-speedometer2"></i> 대시보드 <small class="text-muted">({{ current_month }})</small></h4>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card stat-card primary">
+            <div class="card-body">
+                <div class="text-muted small">총 건물</div>
+                <div class="h3 mb-0">{{ stats.total_buildings }}개</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card info">
+            <div class="card-body">
+                <div class="text-muted small">총 호수</div>
+                <div class="h3 mb-0">{{ stats.total_units }}실</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card success">
+            <div class="card-body">
+                <div class="text-muted small">임대중 / 공실</div>
+                <div class="h3 mb-0">{{ stats.occupied }} / {{ stats.vacant }}실</div>
+                <div class="small text-muted">가동률 {{ occupancy_rate }}%</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card warning">
+            <div class="card-body">
+                <div class="text-muted small">활성 계약</div>
+                <div class="h3 mb-0">{{ active_contracts }}건</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card stat-card success">
+            <div class="card-body">
+                <div class="text-muted small">이번달 수납액</div>
+                <div class="h4 mb-0 text-success">{{ stats.total_collected_this_month | money }}원</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stat-card danger">
+            <div class="card-body">
+                <div class="text-muted small">연체 건수 / 금액</div>
+                <div class="h4 mb-0 text-danger">{{ stats.overdue_count }}건</div>
+                <div class="small text-danger">{{ stats.total_overdue_amount | money }}원</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stat-card warning">
+            <div class="card-body">
+                <div class="text-muted small">수리중</div>
+                <div class="h4 mb-0">{{ stats.repair }}실</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-7">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-exclamation-triangle-fill text-danger"></i> 연체 현황</span>
+                <a href="{{ url_for('overdue_list') }}" class="btn btn-sm btn-outline-danger">전체보기</a>
+            </div>
+            <div class="card-body">
+                {% if overdue %}
+                <table class="table table-sm">
+                    <thead>
+                        <tr><th>건물</th><th>호수</th><th>임차인</th><th>청구월</th><th>미납액</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for o in overdue[:10] %}
+                        <tr class="table-danger">
+                            <td>{{ o.building_name if o.building_name else '-' }}</td>
+                            <td>{{ o.unit_number if o.unit_number else '-' }}</td>
+                            <td>{{ o.tenant_name if o.tenant_name else '-' }}</td>
+                            <td>{{ o.billing_month }}</td>
+                            <td class="text-end">{{ (o.amount - o.paid_amount) | money }}원</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="text-muted text-center my-3">연체가 없습니다 🎉</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-5">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-building"></i> 건물별 현황</div>
+            <div class="card-body">
+                {% if buildings %}
+                <table class="table table-sm">
+                    <thead>
+                        <tr><th>건물명</th><th>유형</th><th>호수</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for b in buildings %}
+                        <tr>
+                            <td>
+                                <a href="{{ url_for('unit_list', bid=b.id) }}">{{ b.name }}</a>
+                            </td>
+                            <td><span class="badge bg-secondary">{{ b.type }}</span></td>
+                            <td>{{ b.total_units }}실</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="text-muted text-center my-3">
+                    등록된 건물이 없습니다.<br>
+                    <a href="{{ url_for('building_add') }}" class="btn btn-sm btn-primary mt-2">건물 등록하기</a>
+                </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

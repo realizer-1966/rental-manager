@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}오류 - 임대관리{% endblock %}
+{% block content %}
+<div class="text-center mt-5">
+    <h1 class="display-1 text-muted">{{ code }}</h1>
+    <p class="lead">{{ message }}</p>
+    <a href="{{ url_for('dashboard') }}" class="btn btn-primary">대시보드로</a>
+</div>
+{% endblock %}

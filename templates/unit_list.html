@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}{{ building.name }} 호수 목록 - 임대관리{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">
+        <i class="bi bi-door-open"></i> {{ building.name }}
+        <small class="text-muted">({{ building.type }})</small>
+    </h4>
+    <div>
+        <a href="{{ url_for('building_list') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left"></i> 건물목록
+        </a>
+        <a href="{{ url_for('unit_add', bid=building.id) }}" class="btn btn-primary btn-sm">
+            <i class="bi bi-plus-lg"></i> 호수 등록
+        </a>
+    </div>
+</div>
+
+{% if building.address %}
+<p class="text-muted small mb-3"><i class="bi bi-geo-alt"></i> {{ building.address }}</p>
+{% endif %}
+
+<div class="card">
+    <div class="card-body">
+        {% if units %}
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>호수</th><th>층</th><th>형태</th><th>평수</th>
+                    <th>보증금</th><th>월세</th><th>관리비</th>
+                    <th>상태</th><th>임차인</th><th>관리</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in units %}
+                <tr>
+                    <td><strong>{{ u.unit_number }}</strong></td>
+                    <td>{{ u.floor or '-' }}</td>
+                    <td>{{ u.room_type or '-' }}</td>
+                    <td>{{ u.area_pyeong or '-' }}평</td>
+                    <td>{{ u.deposit | money }}</td>
+                    <td>{{ u.monthly_rent | money }}</td>
+                    <td>{{ u.management_fee | money }}</td>
+                    <td>
+                        {% if u.status == '임대중' %}
+                        <span class="badge bg-success">임대중</span>
+                        {% elif u.status == '공실' %}
+                        <span class="badge bg-warning text-dark">공실</span>
+                        {% elif u.status == '수리중' %}
+                        <span class="badge bg-secondary">수리중</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ u.tenant_name or '-' }}</td>
+                    <td>
+                        <a href="{{ url_for('repair_list', uid=u.id) }}" class="btn btn-outline-info btn-sm"
+                           title="수리 내역">
+                            <i class="bi bi-tools"></i>
+                        </a>
+                        <a href="{{ url_for('unit_edit', uid=u.id) }}" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <form method="POST" action="{{ url_for('unit_delete', uid=u.id) }}" class="d-inline"
+                              onsubmit="return confirm('정말 삭제하시겠습니까?')">
+                            <button class="btn btn-outline-danger btn-sm"><i class="bi bi-trash"></i></button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="text-muted text-center my-4">
+            등록된 호수가 없습니다.<br>
+            <a href="{{ url_for('unit_add', bid=building.id) }}" class="btn btn-primary mt-2">호수 등록하기</a>
+        </p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

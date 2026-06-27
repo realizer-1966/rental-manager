@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}보증금 납부 - 임대관리{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <h4 class="mb-3">
+            <i class="bi bi-cash-coin"></i> 보증금 납부 등록
+            <small class="text-muted">{{ contract.building_name }} — {{ contract.unit_number }} / {{ contract.tenant_name }}</small>
+        </h4>
+
+        <div class="card mb-3">
+            <div class="card-body">
+                <table class="table table-bordered mb-0">
+                    <tr>
+                        <th class="table-light" style="width:33%">계약 보증금</th>
+                        <td>{{ contract.deposit | money }}원</td>
+                    </tr>
+                    <tr>
+                        <th class="table-light">기납부액</th>
+                        <td class="text-success">{{ deposit_paid | money }}원</td>
+                    </tr>
+                    <tr>
+                        <th class="table-light">미납 잔액</th>
+                        <td class="{% if deposit_balance > 0 %}text-danger{% else %}text-success{% endif %}">
+                            <strong>{{ deposit_balance | money }}원</strong>
+                            {% if deposit_balance <= 0 %}
+                            <span class="badge bg-success ms-2">완납</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><i class="bi bi-plus-circle"></i> 납부 등록</div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">납부액 (원) *</label>
+                            <input type="number" name="amount" class="form-control" required
+                                   value="{{ deposit_balance if deposit_balance > 0 else '' }}" min="1">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">납부일</label>
+                            <input type="date" name="paid_date" class="form-control" value="{{ today_str }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">납부 방법</label>
+                            <select name="payment_method" class="form-select">
+                                <option value="계좌이체">계좌이체</option>
+                                <option value="현금">현금</option>
+                                <option value="카드">카드</option>
+                                <option value="자동이체">자동이체</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">메모</label>
+                            <input type="text" name="memo" class="form-control"
+                                   placeholder="예: 1차 분할, 잔금 납부">
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-lg"></i> 납부 등록
+                            </button>
+                            <a href="{{ url_for('contract_view', cid=contract.id) }}" class="btn btn-outline-secondary">취소</a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

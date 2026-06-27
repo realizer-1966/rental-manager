@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}월별 청구 생성 - 임대관리{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <h4 class="mb-3"><i class="bi bi-magic"></i> 월별 청구 생성</h4>
+        <div class="card mb-3">
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-4">
+                            <label class="form-label">청구월 (YYYY-MM)</label>
+                            <input type="month" name="billing_month" class="form-control" required>
+                        </div>
+                        <div class="col-md-4">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-check-lg"></i> 청구 생성
+                            </button>
+                        </div>
+                    </div>
+                </form>
+                <p class="text-muted small mt-2 mb-0">
+                    활성 계약에 대해 월세 + 관리비 청구를 일괄 생성합니다. 이미 생성된 월은 스킵됩니다.
+                </p>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">대상 계약 (활성)</div>
+            <div class="card-body">
+                {% if contracts %}
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>건물</th><th>호수</th><th>임차인</th>
+                            <th>월세</th><th>관리비</th><th>청구액</th><th>납부일</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for c in contracts %}
+                        <tr>
+                            <td>{{ c.building_name }}</td>
+                            <td><strong>{{ c.unit_number }}</strong></td>
+                            <td>{{ c.tenant_name }}</td>
+                            <td>{{ c.monthly_rent | money }}</td>
+                            <td>{{ c.management_fee | money }}</td>
+                            <td class="text-primary"><strong>{{ (c.monthly_rent + c.management_fee) | money }}</strong></td>
+                            <td>매월 {{ c.payment_day }}일</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="text-muted text-center my-3">활성 계약이 없습니다.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

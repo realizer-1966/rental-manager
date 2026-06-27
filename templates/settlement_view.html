@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}정산 내역 - 임대관리{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <h4 class="mb-3">
+            <i class="bi bi-receipt"></i> 정산 내역
+            <small class="text-muted">{{ contract.building_name }} — {{ contract.unit_number }} / {{ contract.tenant_name }}</small>
+        </h4>
+
+        <div class="card">
+            <div class="card-header bg-light">
+                <i class="bi bi-check-circle-fill text-success"></i> 정산 완료
+                <span class="badge bg-secondary">{{ settlement.settlement_date }}</span>
+            </div>
+            <div class="card-body">
+                <table class="table table-bordered">
+                    <tbody>
+                        <tr><th class="table-light" style="width:30%">퇴거일</th><td>{{ settlement.move_out_date }}</td></tr>
+                        <tr><th class="table-light">마지막 완납월</th><td>{{ settlement.last_paid_month or '없음' }}
+                            {% if settlement.last_paid_date %} (납부일: {{ settlement.last_paid_date }}){% endif %}</td></tr>
+                        <tr><th class="table-light">사용 일수</th><td>{{ settlement.days_used }}일 (월세/30일 기준)</td></tr>
+                        <tr><th class="table-light">일일 월세 / 관리비</th><td>{{ settlement.daily_rent | money }}원 / {{ settlement.daily_mgmt | money }}원</td></tr>
+                        <tr><th class="table-light">일할 월세</th><td>{{ settlement.prorated_rent | money }}원</td></tr>
+                        <tr><th class="table-light">일할 관리비</th><td>{{ settlement.prorated_mgmt | money }}원</td></tr>
+                        <tr><th class="table-light">미납액</th><td class="text-danger">{{ settlement.unpaid_rent | money }}원</td></tr>
+                        {% if settlement.electric_bill > 0 %}
+                        <tr><th class="table-light">전기요금 정산</th><td>{{ settlement.electric_bill | money }}원</td></tr>
+                        {% endif %}
+                        {% if settlement.gas_bill > 0 %}
+                        <tr><th class="table-light">가스요금 정산</th><td>{{ settlement.gas_bill | money }}원</td></tr>
+                        {% endif %}
+                        {% if settlement.cleaning_fee > 0 %}
+                        <tr><th class="table-light">퇴실 청소비</th><td>{{ settlement.cleaning_fee | money }}원</td></tr>
+                        {% endif %}
+                        {% if settlement.extra_deduction > 0 %}
+                        <tr><th class="table-light">추가 공제</th><td class="text-danger">{{ settlement.extra_deduction | money }}원</td></tr>
+                        {% endif %}
+                        <tr class="table-warning"><th>총 공제액</th><td><strong>{{ settlement.total_owed | money }}원</strong></td></tr>
+                        <tr><th class="table-light">보증금</th><td>{{ contract.deposit | money }}원</td></tr>
+                        <tr><th class="table-light">보증금 공제</th><td class="text-danger">- {{ settlement.deposit_deduction | money }}원</td></tr>
+                        {% if settlement.deduction_reason %}
+                        <tr><th class="table-light">공제 사유</th><td>{{ settlement.deduction_reason }}</td></tr>
+                        {% endif %}
+                        <tr class="{% if settlement.final_settlement >= 0 %}table-success{% else %}table-danger{% endif %}">
+                            <th>최종 정산금</th>
+                            <td>
+                                <strong class="h5">
+                                    {% if settlement.final_settlement >= 0 %}
+                                    {{ settlement.final_settlement | money }}원 (임대인 → 임차인 반환)
+                                    {% else %}
+                                    {{ (settlement.final_settlement * -1) | money }}원 (임차인 → 임대인 추가 지급)
+                                    {% endif %}
+                                </strong>
+                            </td>
+                        </tr>
+                        {% if settlement.memo %}
+                        <tr><th class="table-light">메모</th><td>{{ settlement.memo }}</td></tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+                <a href="{{ url_for('contract_view', cid=contract.id) }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> 계약 상세로
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

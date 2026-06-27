@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}{{ '호수 등록' if not unit else '호수 수정' }} - 임대관리{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <h4 class="mb-3">
+            <i class="bi bi-door"></i>
+            {{ '호수 등록' if not unit else '호수 수정' }}
+            <small class="text-muted">— {{ building.name }}</small>
+        </h4>
+        <div class="card">
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">호수 *</label>
+                            <input type="text" name="unit_number" class="form-control" required
+                                   value="{{ unit.unit_number if unit else '' }}" placeholder="101, B01, A-301">
+                            <small class="text-muted">반지하도 동일한 호수 체계 사용 가능</small>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">층</label>
+                            <input type="text" name="floor" class="form-control"
+                                   value="{{ unit.floor if unit else '' }}" placeholder="1, 2, B1, 반지하">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">방 형태</label>
+                            <select name="room_type" class="form-select">
+                                {% set rtypes = ['원룸', '투룸', '전층', '오피스', '상가', '기타'] %}
+                                {% for rt in rtypes %}
+                                <option value="{{ rt }}" {{ 'selected' if unit and unit.room_type == rt }}>{{ rt }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">평수</label>
+                            <input type="number" step="0.1" name="area_pyeong" class="form-control"
+                                   value="{{ unit.area_pyeong if unit else '' }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">제곱미터</label>
+                            <input type="number" step="0.1" name="area_sqm" class="form-control"
+                                   value="{{ unit.area_sqm if unit else '' }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">상태</label>
+                            <select name="status" class="form-select">
+                                {% set statuses = ['공실', '임대중', '수리중'] %}
+                                {% for s in statuses %}
+                                <option value="{{ s }}" {{ 'selected' if unit and unit.status == s }}>{{ s }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <hr class="my-2">
+                        <div class="col-md-4">
+                            <label class="form-label">보증금 (원)</label>
+                            <input type="number" name="deposit" class="form-control"
+                                   value="{{ unit.deposit if unit else 0 }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">월세 (원)</label>
+                            <input type="number" name="monthly_rent" class="form-control"
+                                   value="{{ unit.monthly_rent if unit else 0 }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">관리비 (원)</label>
+                            <input type="number" name="management_fee" class="form-control"
+                                   value="{{ unit.management_fee if unit else 0 }}">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">메모</label>
+                            <textarea name="memo" class="form-control" rows="2">{{ unit.memo if unit else '' }}</textarea>
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-lg"></i> 저장
+                            </button>
+                            <a href="{{ url_for('unit_list', bid=building.id) }}" class="btn btn-outline-secondary">취소</a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}계약 등록 - 임대관리{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <h4 class="mb-3"><i class="bi bi-file-earmark-plus"></i> 계약 등록</h4>
+        <div class="card">
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">호수 *</label>
+                            <select name="unit_id" class="form-select" required>
+                                <option value="">선택하세요</option>
+                                {% for u in units %}
+                                <option value="{{ u.id }}">
+                                    {{ u.building_name }} — {{ u.unit_number }}
+                                    ({{ u.room_type or '' }}, {{ u.area_pyeong or '-' }}평)
+                                </option>
+                                {% endfor %}
+                            </select>
+                            {% if not units %}
+                            <small class="text-danger">공실 호수가 없습니다. 먼저 호수를 등록하세요.</small>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">임차인 *</label>
+                            <select name="tenant_id" class="form-select" required>
+                                <option value="">선택하세요</option>
+                                {% for t in tenants %}
+                                <option value="{{ t.id }}">{{ t.name }} ({{ t.phone or '연락처없음' }})</option>
+                                {% endfor %}
+                            </select>
+                            {% if not tenants %}
+                            <small class="text-danger">임차인이 없습니다. 먼저 임차인을 등록하세요.</small>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">계약 형태</label>
+                            <select name="contract_type" class="form-select">
+                                <option value="월세">월세</option>
+                                <option value="전세">전세</option>
+                                <option value="반전세">반전세</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">보증금 (원)</label>
+                            <input type="number" name="deposit" class="form-control" value="0">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">월세 (원)</label>
+                            <input type="number" name="monthly_rent" class="form-control" value="0">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">관리비 (원)</label>
+                            <input type="number" name="management_fee" class="form-control" value="0">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">퇴실 청소비 (원)</label>
+                            <input type="number" name="cleaning_fee" class="form-control" value="0">
+                            <small class="text-muted">계약서 기재 금액</small>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">1인 추가 비용 (원)</label>
+                            <input type="number" name="extra_person_fee" class="form-control" value="0">
+                            <small class="text-muted">인원 추가 시 월 추가 비용</small>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">계약시작일 *</label>
+                            <input type="date" name="start_date" class="form-control" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">계약종료일 *</label>
+                            <input type="date" name="end_date" class="form-control" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">납부일 (매월 며칠)</label>
+                            <input type="number" name="payment_day" class="form-control" value="25" min="1" max="31">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">메모</label>
+                            <textarea name="memo" class="form-control" rows="2"></textarea>
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-lg"></i> 계약 등록
+                            </button>
+                            <a href="{{ url_for('contract_list') }}" class="btn btn-outline-secondary">취소</a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

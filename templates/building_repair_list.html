@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block title %}건물 수리 내역 - 임대관리{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">
+        <i class="bi bi-tools"></i> 건물 수리 내역
+        <small class="text-muted">{{ building.name }} ({{ building.type }})</small>
+    </h4>
+    <div>
+        <a href="{{ url_for('building_list') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left"></i> 건물 목록
+        </a>
+        <a href="{{ url_for('building_repair_add', bid=building.id) }}" class="btn btn-primary btn-sm">
+            <i class="bi bi-plus-lg"></i> 수리 등록
+        </a>
+    </div>
+</div>
+
+{% if building.address %}
+<p class="text-muted small mb-3"><i class="bi bi-geo-alt"></i> {{ building.address }}</p>
+{% endif %}
+
+<div class="row g-3 mb-3">
+    <div class="col-md-3">
+        <div class="card stat-card info">
+            <div class="card-body">
+                <div class="small text-muted">총 수리 건수</div>
+                <div class="h5 mb-0">{{ repairs|length }}건</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card warning">
+            <div class="card-body">
+                <div class="small text-muted">총 수리 비용</div>
+                <div class="h5 mb-0">{{ total_cost | money }}원</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card success">
+            <div class="card-body">
+                <div class="small text-muted">완료</div>
+                <div class="h5 mb-0">{{ repairs|selectattr('status','equalto','완료')|list|length }}건</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card danger">
+            <div class="card-body">
+                <div class="small text-muted">진행중/접수</div>
+                <div class="h5 mb-0">{{ repairs|rejectattr('status','equalto','완료')|list|length }}건</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        {% if repairs %}
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>수리일</th><th>수리명</th><th>분류</th><th>위치</th>
+                    <th>비용</th><th>수리업체</th><th>상태</th><th>사진</th><th>삭제</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in repairs %}
+                <tr>
+                    <td>{{ r.repair_date }}</td>
+                    <td><strong>{{ r.title }}</strong>
+                        {% if r.memo %}<br><small class="text-muted">{{ r.memo }}</small>{% endif %}
+                    </td>
+                    <td>
+                        {% if r.category %}
+                        <span class="badge bg-secondary">{{ r.category }}</span>
+                        {% else %}-{% endif %}
+                    </td>
+                    <td class="small">{{ r.location or '-' }}</td>
+                    <td class="text-end">{{ r.cost | money }}원</td>
+                    <td class="small">{{ r.contractor or '-' }}</td>
+                    <td>
+                        {% if r.status == '완료' %}
+                        <span class="badge bg-success">완료</span>
+                        {% elif r.status == '진행중' %}
+                        <span class="badge bg-warning text-dark">진행중</span>
+                        {% elif r.status == '접수' %}
+                        <span class="badge bg-info text-dark">접수</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if r.photo_path %}
+                        <a href="{{ url_for('static', filename=r.photo_path) }}" target="_blank" class="btn btn-outline-info btn-sm">
+                            <i class="bi bi-image"></i>
+                        </a>
+                        {% else %}-{% endif %}
+                    </td>
+                    <td>
+                        <form method="POST" action="{{ url_for('building_repair_delete', bid=building.id, rid=r.id) }}" class="d-inline"
+                              onsubmit="return confirm('삭제하시겠습니까?')">
+                            <button class="btn btn-outline-danger btn-sm"><i class="bi bi-trash"></i></button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="text-muted text-center my-4">
+            건물 수리 내역이 없습니다.<br>
+            <a href="{{ url_for('building_repair_add', bid=building.id) }}" class="btn btn-primary mt-2">수리 등록하기</a>
+        </p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

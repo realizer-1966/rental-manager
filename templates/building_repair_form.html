@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}건물 수리 등록 - 임대관리{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-9">
+        <h4 class="mb-3">
+            <i class="bi bi-tools"></i> 건물 수리 내역 등록
+            <small class="text-muted">{{ building.name }}</small>
+        </h4>
+        <div class="card">
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">수리일 *</label>
+                            <input type="date" name="repair_date" class="form-control" value="{{ today_str }}" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">수리명 *</label>
+                            <input type="text" name="title" class="form-control" required
+                                   placeholder="예: 옥상 방수공사, 엘리베이터 점검">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">분류</label>
+                            <select name="category" class="form-select">
+                                <option value="지붕">지붕/옥상</option>
+                                <option value="외벽">외벽</option>
+                                <option value="엘리베이터">엘리베이터</option>
+                                <option value="공동구">공동구/계단실</option>
+                                <option value="보일러실">보일러실/기계실</option>
+                                <option value="소방">소방설비</option>
+                                <option value="전기">전기설비</option>
+                                <option value="수도">수도/배관</option>
+                                <option value="기타">기타</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">위치</label>
+                            <input type="text" name="location" class="form-control"
+                                   placeholder="예: 옥상, 지하주차장, 3층 계단실">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">수리 비용 (원)</label>
+                            <input type="number" name="cost" class="form-control" value="0">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">수리업체 / 담당자</label>
+                            <input type="text" name="contractor" class="form-control"
+                                   placeholder="예: OO방수, 관리자 직접">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">상태</label>
+                            <select name="status" class="form-select">
+                                <option value="완료">완료</option>
+                                <option value="진행중">진행중</option>
+                                <option value="접수">접수</option>
+                            </select>
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label">수리 사진</label>
+                            <input type="file" name="photo" class="form-control" accept="image/*" capture="environment">
+                            <small class="text-muted">수리 전후 사진 (jpg, png, webp)</small>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">상세 내용</label>
+                            <textarea name="memo" class="form-control" rows="3"
+                                      placeholder="수리 상세 내용, 공사 범위, 교체 부품 등"></textarea>
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-lg"></i> 저장
+                            </button>
+                            <a href="{{ url_for('building_repair_list', bid=building.id) }}" class="btn btn-outline-secondary">취소</a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

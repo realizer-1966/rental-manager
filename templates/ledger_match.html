@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}수납 매칭 - 임대관리{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <h4 class="mb-3"><i class="bi bi-link-45deg"></i> 수납 매칭</h4>
+
+        <div class="card mb-3">
+            <div class="card-header"><i class="bi bi-journal-text"></i> 장부 내역</div>
+            <div class="card-body">
+                <table class="table table-sm table-bordered">
+                    <tr><th class="table-light" style="width:25%">거래일시</th><td>{{ entry.tx_date }}</td></tr>
+                    <tr><th class="table-light">종류 / 금액</th>
+                        <td><span class="badge bg-success">입금</span> <strong class="text-success">{{ entry.amount | money }}원</strong></td></tr>
+                    <tr><th class="table-light">입금자</th><td>{{ entry.sender_name or '-' }}</td></tr>
+                    <tr><th class="table-light">메모</th><td>{{ entry.memo or '-' }}</td></tr>
+                    <tr><th class="table-light">은행</th><td>{{ entry.bank_name or '-' }}</td></tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><i class="bi bi-cash-stack"></i> 매칭 가능한 미납 청구
+                <span class="badge bg-warning text-dark">{{ candidates|length }}건</span>
+            </div>
+            <div class="card-body">
+                {% if candidates %}
+                <p class="text-muted small mb-2">금액이 비슷한 순으로 정렬됩니다. 매칭할 청구를 선택해 주세요.</p>
+                <div class="list-group">
+                    {% for c in candidates %}
+                    <form method="POST" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>{{ c.building_name }} — {{ c.unit_number }}호</strong>
+                            / {{ c.tenant_name }}<br>
+                            <small class="text-muted">{{ c.billing_month }}월세 | 청구 {{ c.amount | money }}원 |
+                            잔액 <span class="text-danger">{{ (c.amount - c.paid_amount) | money }}원</span> |
+                            납부기한 {{ c.due_date }}
+                            {% if c.status == 'overdue' %}<span class="badge bg-danger">연체</span>{% endif %}
+                            </small>
+                        </div>
+                        <button type="submit" name="payment_id" value="{{ c.id }}"
+                                class="btn btn-primary btn-sm"
+                                onclick="return confirm('이 청구에 매칭하시겠습니까?')">
+                            <i class="bi bi-link"></i> 매칭
+                        </button>
+                    </form>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted text-center my-3">매칭 가능한 미납 청구가 없습니다.</p>
+                {% endif %}
+            </div>
+        </div>
+        <div class="mt-2">
+            <a href="{{ url_for('ledger_list') }}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left"></i> 장부 목록
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

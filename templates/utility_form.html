@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}공과금 기록 - 임대관리{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-9">
+        <h4 class="mb-3">
+            <i class="bi bi-receipt-cutoff"></i> 공과금 기록
+            <small class="text-muted">{{ contract.building_name }} — {{ contract.unit_number }}</small>
+        </h4>
+        <div class="card">
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">종류 *</label>
+                            <select name="type" class="form-select" required>
+                                <option value="electric">전기 (한전)</option>
+                                <option value="gas">도시가스</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">청구월 *</label>
+                            <input type="month" name="billing_month" class="form-control" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">청구 금액 (원) *</label>
+                            <input type="number" name="amount" class="form-control" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">사용량</label>
+                            <input type="number" step="0.01" name="usage_amount" class="form-control"
+                                   placeholder="kWh 또는 m³">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">문자 수신일</label>
+                            <input type="date" name="sms_date" class="form-control" value="{{ today_str }}">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">한전/가스사 문자 내용</label>
+                            <textarea name="sms_text" class="form-control" rows="4"
+                                      placeholder="[한전] 2026년 4월 전기요금 23,500원 (사용량 120kWh)..."></textarea>
+                            <small class="text-muted">받은 문자를 그대로 복사/붙여넣기 하면 기록으로 보관됩니다</small>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">메모</label>
+                            <textarea name="memo" class="form-control" rows="2"></textarea>
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-lg"></i> 저장
+                            </button>
+                            <a href="{{ url_for('contract_view', cid=contract.id) }}" class="btn btn-outline-secondary">취소</a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

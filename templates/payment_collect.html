@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}수납 등록 - 임대관리{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <h4 class="mb-3"><i class="bi bi-cash-coin"></i> 수납 등록</h4>
+
+        <div class="card mb-3">
+            <div class="card-body">
+                <table class="table table-sm mb-0">
+                    <tr><th>건물</th><td>{{ payment.building_name }}</td></tr>
+                    <tr><th>호수</th><td><strong>{{ payment.unit_number }}</strong></td></tr>
+                    <tr><th>임차인</th><td>{{ payment.tenant_name }}</td></tr>
+                    <tr><th>청구월</th><td>{{ payment.billing_month }}</td></tr>
+                    <tr><th>청구액</th><td>{{ payment.amount | money }}원</td></tr>
+                    <tr><th>기수납액</th><td>{{ payment.paid_amount | money }}원</td></tr>
+                    <tr><th>잔여액</th><td class="text-danger"><strong>{{ (payment.amount - payment.paid_amount) | money }}원</strong></td></tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">수납액 (원) *</label>
+                            <input type="number" name="paid_amount" class="form-control" required
+                                   value="{{ payment.amount - payment.paid_amount }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">수납일</label>
+                            <input type="date" name="paid_date" class="form-control" value="{{ today_str }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">수납 방법</label>
+                            <select name="payment_method" class="form-select">
+                                <option value="계좌이체">계좌이체</option>
+                                <option value="카드">카드</option>
+                                <option value="현금">현금</option>
+                                <option value="자동이체">자동이체</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">입금자명</label>
+                            <input type="text" name="sender_name" class="form-control"
+                                   value="{{ payment.sender_name or '' }}"
+                                   placeholder="예: 홍길동, 홍어머님">
+                            <small class="text-muted">본인 또는 부모님 등 실제 입금자</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">입금 메모</label>
+                            <input type="text" name="deposit_memo" class="form-control"
+                                   value="{{ payment.deposit_memo or '' }}"
+                                   placeholder="예: 101호 월세, 3월분">
+                            <small class="text-muted">계좌 입금 시 기재한 메모</small>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">메모</label>
+                            <textarea name="memo" class="form-control" rows="2"></textarea>
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-check-lg"></i> 수납 등록
+                            </button>
+                            <a href="{{ url_for('payment_list') }}" class="btn btn-outline-secondary">취소</a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

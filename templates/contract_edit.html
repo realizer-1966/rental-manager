@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}계약 수정 - 임대관리{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-9">
+        <h4 class="mb-3">
+            <i class="bi bi-pencil-square"></i> 계약 수정
+            <small class="text-muted">{{ contract.building_name }} — {{ contract.unit_number }} / {{ contract.tenant_name }}</small>
+        </h4>
+
+        <div class="card mb-3">
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">보증금 (원)</label>
+                            <input type="number" name="deposit" class="form-control"
+                                   value="{{ contract.deposit }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">월세 (원)</label>
+                            <input type="number" name="monthly_rent" class="form-control"
+                                   value="{{ contract.monthly_rent }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">관리비 (원)</label>
+                            <input type="number" name="management_fee" class="form-control"
+                                   value="{{ contract.management_fee }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">퇴실 청소비 (원)</label>
+                            <input type="number" name="cleaning_fee" class="form-control"
+                                   value="{{ contract.cleaning_fee or 0 }}">
+                            <small class="text-muted">계약서 기재 금액</small>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">1인 추가 비용 (원)</label>
+                            <input type="number" name="extra_person_fee" class="form-control"
+                                   value="{{ contract.extra_person_fee or 0 }}">
+                            <small class="text-muted">인원 추가 시 월 추가 비용</small>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">계약종료일</label>
+                            <input type="date" name="end_date" class="form-control"
+                                   value="{{ contract.end_date }}">
+                        </div>
+
+                        <hr class="my-2">
+                        <div class="col-12">
+                            <h6 class="text-primary"><i class="bi bi-calendar-event"></i> 납부일 설정</h6>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">최초 납부일</label>
+                            <input type="text" class="form-control" disabled
+                                   value="{{ contract.original_payment_day or contract.payment_day }}일">
+                            <small class="text-muted">계약 시 최초 납부일</small>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">현재 납부일</label>
+                            <input type="number" name="payment_day" class="form-control"
+                                   value="{{ contract.payment_day }}" min="1" max="31">
+                            <small class="text-muted">변경 시 이력이 기록됩니다</small>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">납부일 변경 적용일</label>
+                            <input type="date" name="change_date" class="form-control" value="{{ today_str }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">변경 사유</label>
+                            <input type="text" name="change_reason" class="form-control"
+                                   placeholder="예: 급여일 변경">
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label">메모</label>
+                            <textarea name="memo" class="form-control" rows="2">{{ contract.memo or '' }}</textarea>
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-lg"></i> 저장
+                            </button>
+                            <a href="{{ url_for('contract_view', cid=contract.id) }}" class="btn btn-outline-secondary">취소</a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        {% if day_changes %}
+        <div class="card">
+            <div class="card-header"><i class="bi bi-clock-history"></i> 납부일 변경 이력</div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    <thead>
+                        <tr><th>이전 납부일</th><th>변경 후</th><th>변경 적용일</th><th>사유</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for dc in day_changes %}
+                        <tr>
+                            <td>{{ dc.old_day }}일</td>
+                            <td><strong>{{ dc.new_day }}일</strong></td>
+                            <td>{{ dc.changed_date }}</td>
+                            <td>{{ dc.reason or '-' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

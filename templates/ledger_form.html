@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}장부 입력 - 임대관리{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-9">
+        <h4 class="mb-3"><i class="bi bi-receipt"></i> 장부 입력</h4>
+
+        <!-- SMS 붙여넣기 탭 -->
+        <div class="card mb-3">
+            <div class="card-header"><i class="bi bi-clipboard"></i> 은행 SMS/알림톡 붙여넣기</div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">은행 알림 문자 전체 붙여넣기</label>
+                        <textarea name="sms_text" class="form-control" rows="6"
+                                  placeholder="예: KB국민은행 05/27 13:20 승인 [입금] 550,000원 홍길동 101호월세 잔액 3,200,000원&#10;&#10;또는: 신한 [입금] 550,000원 05/27 13:20 홍길동 잔액 3,200,000원&#10;&#10;은행 문자/알림톡을 길게 눌러 '복사' 후 여기에 붙여넣기 하세요."></textarea>
+                        <small class="text-muted">국민, 신한, 카카오, 하나, 우리, 농협 등 주요 은행 지원</small>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-magic"></i> 자동 파싱 등록
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- 수동 입력 -->
+        <div class="card">
+            <div class="card-header"><i class="bi bi-pencil"></i> 수동 입력</div>
+            <div class="card-body">
+                <form method="POST">
+                    <input type="hidden" name="manual_mode" value="1">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label">종류</label>
+                            <select name="tx_type" class="form-select">
+                                <option value="deposit">입금</option>
+                                <option value="withdraw">출금</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">금액 (원) *</label>
+                            <input type="number" name="amount" class="form-control" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">날짜</label>
+                            <input type="date" name="tx_date" class="form-control" value="{{ today_str }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">은행</label>
+                            <select name="bank_name" class="form-select">
+                                <option value="">선택</option>
+                                <option value="국민">국민</option>
+                                <option value="신한">신한</option>
+                                <option value="카카오">카카오</option>
+                                <option value="하나">하나</option>
+                                <option value="우리">우리</option>
+                                <option value="농협">농협</option>
+                                <option value="기타">기타</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">입금자 / 대상</label>
+                            <input type="text" name="sender_name" class="form-control" placeholder="홍길동, 홍어머님">
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label">메모 / 적요</label>
+                            <input type="text" name="memo" class="form-control" placeholder="101호 월세, 수리비 등">
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-outline-primary">
+                                <i class="bi bi-check-lg"></i> 수동 등록
+                            </button>
+                            <a href="{{ url_for('ledger_list') }}" class="btn btn-outline-secondary">장부 목록</a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

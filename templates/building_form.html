@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}{{ '건물 등록' if not building else '건물 수정' }} - 임대관리{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <h4 class="mb-3">
+            <i class="bi bi-building-add"></i>
+            {{ '건물 등록' if not building else '건물 수정' }}
+        </h4>
+        <div class="card">
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">건물명 *</label>
+                            <input type="text" name="name" class="form-control" required
+                                   value="{{ building.name if building else '' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">유형 *</label>
+                            <select name="type" class="form-select" required>
+                                {% set types = ['원룸건물', '투룸건물', '오피스텔', '분양형호텔', '복합건물', '기타'] %}
+                                {% for t in types %}
+                                <option value="{{ t }}" {{ 'selected' if building and building.type == t }}>{{ t }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">주소</label>
+                            <input type="text" name="address" class="form-control"
+                                   value="{{ building.address if building else '' }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">층 수</label>
+                            <input type="number" name="floors" class="form-control" min="0"
+                                   value="{{ building.floors if building else '' }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">총 호수</label>
+                            <input type="number" name="total_units" class="form-control" min="0"
+                                   value="{{ building.total_units if building else '' }}">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">메모</label>
+                            <textarea name="memo" class="form-control" rows="2">{{ building.memo if building else '' }}</textarea>
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-lg"></i> 저장
+                            </button>
+                            <a href="{{ url_for('building_list') }}" class="btn btn-outline-secondary">취소</a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

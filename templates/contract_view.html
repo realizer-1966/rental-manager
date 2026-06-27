@@ -1,0 +1,378 @@
+{% extends "base.html" %}
+{% block title %}계약 상세 - 임대관리{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0"><i class="bi bi-file-earmark-text-fill"></i> 계약 상세</h4>
+    <div>
+        {% if contract.status == 'active' %}
+        <a href="{{ url_for('contract_edit', cid=contract.id) }}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-pencil-square"></i> 계약 수정
+        </a>
+        <a href="{{ url_for('contract_settlement', cid=contract.id) }}" class="btn btn-warning btn-sm">
+            <i class="bi bi-calculator"></i> 퇴거 정산
+        </a>
+        <a href="{{ url_for('deposit_add', cid=contract.id) }}" class="btn btn-outline-warning btn-sm">
+            <i class="bi bi-cash-coin"></i> 보증금 납부
+        </a>
+        <a href="{{ url_for('contract_ocr', cid=contract.id) }}" class="btn btn-outline-success btn-sm">
+            <i class="bi bi-card-text"></i> 계약서 OCR
+        </a>
+        <a href="{{ url_for('meter_add', cid=contract.id) }}" class="btn btn-outline-info btn-sm">
+            <i class="bi bi-speedometer"></i> 계량기
+        </a>
+        <a href="{{ url_for('utility_add', cid=contract.id) }}" class="btn btn-outline-success btn-sm">
+            <i class="bi bi-receipt-cutoff"></i> 공과금
+        </a>
+        {% endif %}
+        <a href="{{ url_for('contract_list') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left"></i> 목록
+        </a>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-house"></i> 임대물건</div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    <tr><th>건물</th><td>{{ contract.building_name }}</td></tr>
+                    <tr><th>호수</th><td><strong>{{ contract.unit_number }}</strong></td></tr>
+                    <tr><th>계약 형태</th><td>{{ contract.contract_type }}</td></tr>
+                    <tr><th>보증금</th><td>{{ contract.deposit | money }}원
+                        {% if deposit_balance > 0 %}
+                        <br><small class="text-danger">미납 잔액 {{ deposit_balance | money }}원</small>
+                        {% elif deposit_paid > 0 %}
+                        <br><small class="text-success">완납 ({{ deposit_paid | money }}원 납부)</small>
+                        {% endif %}
+                    </td></tr>
+                    <tr><th>월세</th><td>{{ contract.monthly_rent | money }}원</td></tr>
+                    <tr><th>관리비</th><td>{{ contract.management_fee | money }}원</td></tr>
+                    <tr><th>퇴실 청소비</th><td>{{ contract.cleaning_fee | money }}원</td></tr>
+                    <tr><th>1인 추가 비용</th><td>{{ contract.extra_person_fee | money }}원</td></tr>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-person"></i> 임차인 정보</div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    <tr><th>이름</th><td><strong>{{ contract.tenant_name }}</strong></td></tr>
+                    <tr><th>전화번호</th><td>{{ contract.phone or '-' }}</td></tr>
+                    <tr><th>이메일</th><td>{{ contract.email or '-' }}</td></tr>
+                    <tr><th>주소</th><td class="small">{{ contract.address or '-' }}</td></tr>
+                    <tr><th>주민/사업자번호</th><td>{{ contract.id_number or '-' }}</td></tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mt-1">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-calendar-range"></i> 계약 조건</div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    <tr><th>계약기간</th><td>{{ contract.start_date }} ~ {{ contract.end_date }}</td></tr>
+                    <tr>
+                        <th>납부일</th>
+                        <td>
+                            매월 {{ contract.payment_day }}일
+                            {% if contract.original_payment_day and contract.original_payment_day != contract.payment_day %}
+                            <br><small class="text-warning">
+                                <i class="bi bi-arrow-right-short"></i>
+                                최초 {{ contract.original_payment_day }}일에서 변경
+                                {% if contract.payment_day_changed_date %}
+                                (변경일: {{ contract.payment_day_changed_date }})
+                                {% endif %}
+                            </small>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% if contract.terminated_date %}
+                    <tr><th>퇴거일</th><td>{{ contract.terminated_date }}</td></tr>
+                    {% endif %}
+                    <tr><th>상태</th>
+                        <td>
+                            {% if contract.status == 'active' %}
+                            <span class="badge bg-success">활성</span>
+                            {% elif contract.status == 'terminated' %}
+                            <span class="badge bg-danger">해지</span>
+                            {% elif contract.status == 'expired' %}
+                            <span class="badge bg-warning text-dark">만료</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr><th>메모</th><td class="small">{{ contract.memo or '-' }}</td></tr>
+                </table>
+                {% if contract.status == 'active' %}
+                <form method="POST" action="{{ url_for('contract_terminate', cid=contract.id) }}">
+                    <button class="btn btn-outline-danger btn-sm">
+                        <i class="bi bi-x-circle"></i> 계약 해지 (정산)
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-cash-stack"></i> 수납 내역</div>
+            <div class="card-body">
+                {% if payments %}
+                <table class="table table-sm">
+                    <thead>
+                        <tr><th>청구월</th><th>청구액</th><th>수납액</th><th>입금자</th><th>입금메모</th><th>상태</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for p in payments %}
+                        <tr>
+                            <td>{{ p.billing_month }}</td>
+                            <td>{{ p.amount | money }}</td>
+                            <td>{{ p.paid_amount | money }}</td>
+                            <td class="small">{{ p.sender_name or '-' }}</td>
+                            <td class="small text-muted">{{ p.deposit_memo or '-' }}</td>
+                            <td>
+                                {% if p.status == 'paid' %}
+                                <span class="badge bg-success">완납</span>
+                                {% elif p.status == 'partial' %}
+                                <span class="badge bg-warning text-dark">부분납</span>
+                                {% elif p.status == 'unpaid' %}
+                                <span class="badge bg-secondary">미납</span>
+                                {% elif p.status == 'overdue' %}
+                                <span class="badge bg-danger">연체</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="text-muted text-center">수납 내역이 없습니다.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if deposit_payments %}
+<div class="row g-3 mt-1">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-cash-coin"></i> 보증금 납부 이력
+                <span class="badge bg-success ms-2">납부 {{ deposit_paid | money }}원</span>
+                {% if deposit_balance > 0 %}
+                <span class="badge bg-danger">잔액 {{ deposit_balance | money }}원</span>
+                {% else %}
+                <span class="badge bg-info text-dark">완납</span>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    <thead><tr><th>납부일</th><th>납부액</th><th>방법</th><th>메모</th><th>삭제</th></tr></thead>
+                    <tbody>
+                        {% for d in deposit_payments %}
+                        <tr>
+                            <td>{{ d.paid_date }}</td>
+                            <td class="text-success">{{ d.amount | money }}원</td>
+                            <td>{{ d.payment_method or '-' }}</td>
+                            <td class="small">{{ d.memo or '-' }}</td>
+                            <td>
+                                <form method="POST" action="{{ url_for('deposit_delete', cid=contract.id, did=d.id) }}" class="d-inline"
+                                      onsubmit="return confirm('삭제하시겠습니까?')">
+                                    <button class="btn btn-outline-danger btn-sm"><i class="bi bi-trash"></i></button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if meters %}
+<div class="row g-3 mt-1">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-speedometer"></i> 계량기 기록</div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    <thead><tr><th>종류</th><th>구분</th><th>날짜</th><th>수치</th><th>사진</th><th>삭제</th></tr></thead>
+                    <tbody>
+                        {% for m in meters %}
+                        <tr>
+                            <td>{{ '전기' if m.type == 'electric' else '가스' }}</td>
+                            <td><span class="badge {% if m.reading_type == 'move_in' %}bg-info text-dark{% else %}bg-warning{% endif %}">{{ '입주' if m.reading_type == 'move_in' else '퇴거' }}</span></td>
+                            <td>{{ m.reading_date }}</td>
+                            <td>{{ m.meter_value or '-' }} {{ 'kWh' if m.type == 'electric' else 'm³' }}</td>
+                            <td>
+                                {% if m.photo_path %}
+                                <a href="{{ url_for('static', filename=m.photo_path) }}" target="_blank" class="btn btn-outline-info btn-sm">
+                                    <i class="bi bi-image"></i> 보기
+                                </a>
+                                {% else %}-{% endif %}
+                            </td>
+                            <td>
+                                <form method="POST" action="{{ url_for('meter_delete', cid=contract.id, mid=m.id) }}" class="d-inline"
+                                      onsubmit="return confirm('삭제하시겠습니까?')">
+                                    <button class="btn btn-outline-danger btn-sm"><i class="bi bi-trash"></i></button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if utilities %}
+<div class="row g-3 mt-1">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-receipt-cutoff"></i> 공과금 내역</div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    <thead><tr><th>종류</th><th>청구월</th><th>금액</th><th>수납액</th><th>잔액</th><th>문자일</th><th>상태</th><th>수납</th><th>삭제</th></tr></thead>
+                    <tbody>
+                        {% for u in utilities %}
+                        <tr>
+                            <td>{{ '전기' if u.type == 'electric' else '가스' }}</td>
+                            <td>{{ u.billing_month }}</td>
+                            <td>{{ u.amount | money }}</td>
+                            <td>{{ u.paid_amount | money }}</td>
+                            <td class="text-danger">{{ (u.amount - u.paid_amount) | money }}</td>
+                            <td class="small">{{ u.sms_date or '-' }}</td>
+                            <td>
+                                {% if u.status == 'paid' %}<span class="badge bg-success">완납</span>
+                                {% else %}<span class="badge bg-danger">미납</span>{% endif %}
+                            </td>
+                            <td>
+                                {% if u.status != 'paid' %}
+                                <form method="POST" action="{{ url_for('utility_pay', cid=contract.id, uid=u.id) }}" class="d-inline">
+                                    <input type="number" name="paid_amount" value="{{ u.amount - u.paid_amount }}" class="form-control form-control-sm d-inline-block" style="width:100px">
+                                    <input type="date" name="paid_date" value="{{ today_str }}" class="form-control form-control-sm d-inline-block" style="width:130px">
+                                    <button class="btn btn-success btn-sm"><i class="bi bi-check"></i></button>
+                                </form>
+                                {% else %}-{% endif %}
+                            </td>
+                            <td>
+                                <form method="POST" action="{{ url_for('utility_delete', cid=contract.id, uid=u.id) }}" class="d-inline"
+                                      onsubmit="return confirm('삭제하시겠습니까?')">
+                                    <button class="btn btn-outline-danger btn-sm"><i class="bi bi-trash"></i></button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% if u.sms_text %}
+                        <tr class="small text-muted"><td colspan="9"><i class="bi bi-chat-text"></i> {{ u.sms_text[:200] }}{% if u.sms_text|length > 200 %}...{% endif %}</td></tr>
+                        {% endif %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if ocr_records %}
+<div class="row g-3 mt-1">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-card-text"></i> 계약서 OCR 기록</div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    <thead><tr><th>처리일</th><th>사진</th><th>추출 요약</th></tr></thead>
+                    <tbody>
+                        {% for o in ocr_records %}
+                        <tr>
+                            <td class="small">{{ o.ocr_date }}</td>
+                            <td>
+                                <a href="{{ url_for('static', filename=o.photo_path) }}" target="_blank" class="btn btn-outline-info btn-sm">
+                                    <i class="bi bi-image"></i> 보기
+                                </a>
+                            </td>
+                            <td class="small text-muted">{{ o.parsed_data[:120] if o.parsed_data else '-' }}...</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if day_changes %}
+<div class="row g-3 mt-1">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-clock-history"></i> 납부일 변경 이력</div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    <thead><tr><th>이전 납부일</th><th>변경 후</th><th>변경 적용일</th><th>사유</th></tr></thead>
+                    <tbody>
+                        {% for dc in day_changes %}
+                        <tr>
+                            <td>{{ dc.old_day }}일</td>
+                            <td><strong>{{ dc.new_day }}일</strong></td>
+                            <td>{{ dc.changed_date }}</td>
+                            <td>{{ dc.reason or '-' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if settlement %}
+<div class="row g-3 mt-1">
+    <div class="col-12">
+        <div class="card border-success">
+            <div class="card-header bg-success text-white">
+                <i class="bi bi-receipt"></i> 퇴거 정산 내역
+                <span class="badge bg-light text-dark">{{ settlement.settlement_date }}</span>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <small class="text-muted">퇴거일</small><br>
+                        <strong>{{ settlement.move_out_date }}</strong>
+                    </div>
+                    <div class="col-md-3">
+                        <small class="text-muted">사용 일수</small><br>
+                        <strong>{{ settlement.days_used }}일</strong>
+                    </div>
+                    <div class="col-md-3">
+                        <small class="text-muted">일할 월세 / 관리비</small><br>
+                        <strong>{{ settlement.prorated_rent | money }} / {{ settlement.prorated_mgmt | money }}원</strong>
+                    </div>
+                    <div class="col-md-3">
+                        <small class="text-muted">최종 정산금</small><br>
+                        <strong class="h6 {% if settlement.final_settlement >= 0 %}text-success{% else %}text-danger{% endif %}">
+                            {{ settlement.final_settlement | money }}원
+                        </strong>
+                    </div>
+                </div>
+                <hr>
+                <a href="{{ url_for('contract_settlement', cid=contract.id) }}" class="btn btn-outline-success btn-sm">
+                    <i class="bi bi-eye"></i> 정산 상세
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
