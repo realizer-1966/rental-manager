@@ -33,7 +33,12 @@
         </button>
         <div class="collapse navbar-collapse" id="nav">
             <ul class="navbar-nav me-auto">
-                <li class="nav-item"><a class="nav-link" href="{{ url_for('dashboard') }}">대시보드</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ url_for('dashboard') }}">
+                    대시보드
+                    {% if alert_count is defined and alert_count > 0 %}
+                    <span class="badge bg-warning text-dark">{{ alert_count }}</span>
+                    {% endif %}
+                </a></li>
                 <li class="nav-item"><a class="nav-link" href="{{ url_for('building_list') }}">건물/호수</a></li>
                 <li class="nav-item"><a class="nav-link" href="{{ url_for('tenant_list') }}">임차인</a></li>
                 <li class="nav-item"><a class="nav-link" href="{{ url_for('contract_list') }}">계약</a></li>

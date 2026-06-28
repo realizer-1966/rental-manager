@@ -76,7 +76,18 @@
             <div class="card-header"><i class="bi bi-calendar-range"></i> 계약 조건</div>
             <div class="card-body">
                 <table class="table table-sm">
-                    <tr><th>계약기간</th><td>{{ contract.start_date }} ~ {{ contract.end_date }}</td></tr>
+                    <tr><th>계약기간</th><td>{{ contract.start_date }} ~ {{ contract.end_date }}
+                        {% if contract.status == 'active' and contract.renewal_alert_sent %}
+                        <br><span class="badge bg-warning text-dark mt-1">
+                            <i class="bi bi-bell"></i> 만료 2개월전 알림 ({{ contract.renewal_alert_sent }})
+                        </span>
+                        {% endif %}
+                        {% if contract.status == 'active' and contract.deposit_return_alert_sent %}
+                        <br><span class="badge bg-info text-dark mt-1">
+                            <i class="bi bi-cash"></i> 보증금 반환 6개월전 알림 ({{ contract.deposit_return_alert_sent }})
+                        </span>
+                        {% endif %}
+                    </td></tr>
                     <tr>
                         <th>납부일</th>
                         <td>

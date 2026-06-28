@@ -67,6 +67,69 @@
     </div>
 </div>
 
+{% if renewal_alerts or deposit_alerts %}
+<div class="row g-3 mb-4">
+    {% if renewal_alerts %}
+    <div class="col-md-6">
+        <div class="card border-warning">
+            <div class="card-header bg-warning text-dark">
+                <i class="bi bi-bell-fill"></i> 계약 만료 예정 (2개월 이내)
+                <span class="badge bg-danger">{{ renewal_alerts|length }}건</span>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    <thead><tr><th>건물</th><th>호수</th><th>임차인</th><th>만료일</th><th></th></tr></thead>
+                    <tbody>
+                        {% for r in renewal_alerts %}
+                        <tr class="table-warning">
+                            <td class="small">{{ r.building_name }}</td>
+                            <td><strong>{{ r.unit_number }}</strong></td>
+                            <td class="small">{{ r.tenant_name }}</td>
+                            <td class="small">{{ r.end_date }}</td>
+                            <td>
+                                <a href="{{ url_for('contract_view', cid=r.id) }}" class="btn btn-outline-warning btn-sm">확인</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if deposit_alerts %}
+    <div class="col-md-6">
+        <div class="card border-info">
+            <div class="card-header bg-info text-dark">
+                <i class="bi bi-cash-stack"></i> 보증금 반환 예정 (6개월 이내)
+                <span class="badge bg-primary">{{ deposit_alerts|length }}건</span>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    <thead><tr><th>건물</th><th>호수</th><th>임차인</th><th>보증금</th><th>만료일</th><th>확인</th></tr></thead>
+                    <tbody>
+                        {% for d in deposit_alerts %}
+                        <tr>
+                            <td class="small">{{ d.building_name }}</td>
+                            <td><strong>{{ d.unit_number }}</strong></td>
+                            <td class="small">{{ d.tenant_name }}</td>
+                            <td class="small">{{ d.deposit | money }}</td>
+                            <td class="small">{{ d.end_date }}</td>
+                            <td>
+                                <a href="{{ url_for('contract_view', cid=d.id) }}" class="btn btn-outline-info btn-sm">확인</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
 <div class="row g-3">
     <div class="col-md-7">
         <div class="card">

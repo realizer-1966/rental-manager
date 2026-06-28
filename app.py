@@ -80,9 +80,17 @@ def inject_overdue_count():
         count = db.execute(
             "SELECT COUNT(*) FROM payments WHERE status = 'overdue'"
         ).fetchone()[0]
-        return {"overdue_count": count}
+        # 계약 알림 카운트 (만료 2개월전 + 보증금반환 6개월전)
+        today = today_str()
+        alert_count = db.execute(
+            """SELECT COUNT(*) FROM contracts WHERE status = 'active'
+               AND end_date IS NOT NULL
+               AND date(end_date, '-2 months') <= date(?)""",
+            (today,)
+        ).fetchone()[0]
+        return {"overdue_count": count, "alert_count": alert_count}
     except Exception:
-        return {"overdue_count": 0}
+        return {"overdue_count": 0, "alert_count": 0}
 
 
 # ============================================================
@@ -103,6 +111,55 @@ def update_overdue_status():
         (today,)
     )
     db.commit()
+
+
+def check_contract_alerts():
+    """계약 만료 2개월전 알림 + 보증금 반환 6개월전 알림 체크"""
+    db = get_db()
+    today = date.today()
+    active_contracts = db.execute(
+        "SELECT * FROM contracts WHERE status = 'active'"
+    ).fetchall()
+
+    renewal_alerts = []      # 만료 2개월전
+    deposit_alerts = []      # 보증금 반환 6개월전
+    renewal_urgent = []      # 만료 1개월 이내
+
+    for c in active_contracts:
+        if not c["end_date"]:
+            continue
+        end_date = date.fromisoformat(c["end_date"])
+        days_until_end = (end_date - today).days
+
+        # 계약 만료 2개월(60일) 전 알림
+        if days_until_end <= 60 and days_until_end > 0:
+            if not c["renewal_alert_sent"]:
+                db.execute(
+                    "UPDATE contracts SET renewal_alert_sent = ? WHERE id = ?",
+                    (today_str(), c["id"])
+                )
+            renewal_alerts.append(c)
+            if days_until_end <= 30:
+                renewal_urgent.append(c)
+
+        # 보증금 반환 6개월(180일) 전 알림
+        if days_until_end <= 180 and days_until_end > 0:
+            if not c["deposit_return_alert_sent"]:
+                db.execute(
+                    "UPDATE contracts SET deposit_return_alert_sent = ? WHERE id = ?",
+                    (today_str(), c["id"])
+                )
+            # 보증금이 있는 경우만
+            if c["deposit"] > 0:
+                deposit_alerts.append(c)
+
+    db.commit()
+    return {
+        "renewal_alerts": renewal_alerts,
+        "renewal_urgent": renewal_urgent,
+        "deposit_alerts": deposit_alerts,
+        "total_alerts": len(renewal_alerts) + len(deposit_alerts),
+    }
 
 
 def fmt_money(n):
@@ -341,6 +398,39 @@ def dashboard():
         "SELECT COUNT(*) FROM contracts WHERE status = 'active'"
     ).fetchone()[0]
 
+    # 계약 알림 체크
+    alerts = check_contract_alerts()
+
+    # 알림 상세 데이터 (건물/호수/임차인 정보 포함)
+    renewal_alerts_detail = db.execute(
+        """SELECT c.id, c.end_date, c.deposit, c.renewal_alert_sent,
+                  u.unit_number, b.name as building_name, t.name as tenant_name
+           FROM contracts c
+           JOIN units u ON u.id = c.unit_id
+           JOIN buildings b ON b.id = u.building_id
+           JOIN tenants t ON t.id = c.tenant_id
+           WHERE c.status = 'active' AND c.end_date IS NOT NULL
+             AND date(c.end_date, '-2 months') <= date(?)
+             AND date(c.end_date) > date(?)
+           ORDER BY c.end_date""",
+        (today_str(), today_str())
+    ).fetchall()
+
+    deposit_alerts_detail = db.execute(
+        """SELECT c.id, c.end_date, c.deposit, c.deposit_return_alert_sent,
+                  u.unit_number, b.name as building_name, t.name as tenant_name
+           FROM contracts c
+           JOIN units u ON u.id = c.unit_id
+           JOIN buildings b ON b.id = u.building_id
+           JOIN tenants t ON t.id = c.tenant_id
+           WHERE c.status = 'active' AND c.end_date IS NOT NULL
+             AND date(c.end_date, '-6 months') <= date(?)
+             AND date(c.end_date) > date(?)
+             AND c.deposit > 0
+           ORDER BY c.end_date""",
+        (today_str(), today_str())
+    ).fetchall()
+
     occupancy_rate = 0
     if stats["total_units"] > 0:
         occupancy_rate = round(stats["occupied"] / stats["total_units"] * 100, 1)
@@ -351,6 +441,9 @@ def dashboard():
         active_contracts=active_contracts,
         occupancy_rate=occupancy_rate,
         current_month=current_month,
+        alerts=alerts,
+        renewal_alerts=renewal_alerts_detail,
+        deposit_alerts=deposit_alerts_detail,
     )
 
 

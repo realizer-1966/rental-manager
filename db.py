@@ -108,6 +108,8 @@ CREATE TABLE IF NOT EXISTS contracts (
     payment_day_changed_date TEXT,        -- 납부일 변경일
     status TEXT DEFAULT 'active',        -- active / expired / terminated
     terminated_date TEXT,                -- 해지(퇴거)일
+    renewal_alert_sent TEXT,             -- 만료 2개월전 알림 발송일 (NULL=미발송)
+    deposit_return_alert_sent TEXT,      -- 보증금 반환 6개월전 알림 발송일 (NULL=미발송)
     memo TEXT,
     created_at TEXT DEFAULT (datetime('now', 'localtime')),
     FOREIGN KEY (unit_id) REFERENCES units(id),
@@ -311,6 +313,10 @@ def init_db():
             conn.execute("ALTER TABLE contracts ADD COLUMN cleaning_fee INTEGER DEFAULT 0")
         if "extra_person_fee" not in cols:
             conn.execute("ALTER TABLE contracts ADD COLUMN extra_person_fee INTEGER DEFAULT 0")
+        if "renewal_alert_sent" not in cols:
+            conn.execute("ALTER TABLE contracts ADD COLUMN renewal_alert_sent TEXT")
+        if "deposit_return_alert_sent" not in cols:
+            conn.execute("ALTER TABLE contracts ADD COLUMN deposit_return_alert_sent TEXT")
         # 기존 계약의 original_payment_day 채우기
         conn.execute(
             """UPDATE contracts SET original_payment_day = payment_day
