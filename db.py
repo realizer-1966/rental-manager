@@ -283,6 +283,31 @@ CREATE TABLE IF NOT EXISTS ledger (
     created_at TEXT DEFAULT (datetime('now', 'localtime'))
 );
 
+-- 공지사항
+CREATE TABLE IF NOT EXISTS notices (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,                       -- 제목
+    body TEXT NOT NULL,                        -- 본문
+    category TEXT DEFAULT 'general',           -- general(일반) / urgent(긴급) / maintenance(점검) / rent(수납)
+    is_pinned INTEGER DEFAULT 0,               -- 고정 여부 (1=고정)
+    target_building_id INTEGER,                -- 특정 건물 지정 (NULL=전체)
+    created_by TEXT,                           -- 작성자
+    created_at TEXT DEFAULT (datetime('now', 'localtime')),
+    updated_at TEXT DEFAULT (datetime('now', 'localtime')),
+    FOREIGN KEY (target_building_id) REFERENCES buildings(id) ON DELETE SET NULL
+);
+
+-- 공지 읽음 기록
+CREATE TABLE IF NOT EXISTS notice_reads (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    notice_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    read_at TEXT DEFAULT (datetime('now', 'localtime')),
+    FOREIGN KEY (notice_id) REFERENCES notices(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    UNIQUE(notice_id, user_id)
+);
+
 -- 인덱스
 CREATE INDEX IF NOT EXISTS idx_units_building ON units(building_id);
 CREATE INDEX IF NOT EXISTS idx_payments_status ON payments(status);
@@ -294,6 +319,7 @@ CREATE INDEX IF NOT EXISTS idx_building_repairs ON building_repairs(building_id)
 CREATE INDEX IF NOT EXISTS idx_ledger_date ON ledger(tx_date);
 CREATE INDEX IF NOT EXISTS idx_ledger_matched ON ledger(matched_status);
 CREATE INDEX IF NOT EXISTS idx_contract_ocrs ON contract_ocrs(contract_id);
+CREATE INDEX IF NOT EXISTS idx_notices_created ON notices(created_at);
 """
 
 

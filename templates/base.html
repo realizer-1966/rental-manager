@@ -47,8 +47,16 @@
                 <li class="nav-item">
                     <a class="nav-link" href="{{ url_for('overdue_list') }}">
                         연체
-                        {% if overdue_count > 0 %}
+                        {% if overdue_count is defined and overdue_count > 0 %}
                         <span class="badge badge-overdue">{{ overdue_count }}</span>
+                        {% endif %}
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('notice_list') }}">
+                        <i class="bi bi-megaphone-fill"></i> 공지
+                        {% if unread_notices is defined and unread_notices > 0 %}
+                        <span class="badge bg-warning text-dark">{{ unread_notices }}</span>
                         {% endif %}
                     </a>
                 </li>

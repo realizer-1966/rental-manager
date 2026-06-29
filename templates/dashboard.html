@@ -192,4 +192,35 @@
         </div>
     </div>
 </div>
+
+<!-- 최신 공지 -->
+{% if recent_notices %}
+<div class="row mt-3">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-megaphone-fill text-primary"></i> 최신 공지</span>
+                <a href="{{ url_for('notice_list') }}" class="btn btn-sm btn-outline-primary">전체보기</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    {% for n in recent_notices %}
+                    <a href="{{ url_for('notice_view', nid=n.id) }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-start">
+                        <div>
+                            {% if n.is_pinned %}<i class="bi bi-pin-angle-fill text-primary"></i>{% endif %}
+                            <span class="badge bg-secondary">{{ n.category }}</span>
+                            <strong>{{ n.title }}</strong>
+                            {% if n.building_name %}
+                            <span class="badge bg-light text-dark">{{ n.building_name }}</span>
+                            {% endif %}
+                        </div>
+                        <small class="text-muted">{{ n.created_at[:10] }}</small>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
 {% endblock %}

@@ -435,6 +435,25 @@ def dashboard():
     if stats["total_units"] > 0:
         occupancy_rate = round(stats["occupied"] / stats["total_units"] * 100, 1)
 
+    # 최신 공지 (고정공지 + 최근 5건)
+    recent_notices = db.execute(
+        """SELECT n.*, b.name as building_name
+           FROM notices n
+           LEFT JOIN buildings b ON b.id = n.target_building_id
+           ORDER BY n.is_pinned DESC, n.created_at DESC
+           LIMIT 5"""
+    ).fetchall()
+
+    # 안 읽은 공지 수
+    user_id = session.get("user_id")
+    unread_notices = db.execute(
+        """SELECT COUNT(*) FROM notices n
+           WHERE NOT EXISTS (
+               SELECT 1 FROM notice_reads nr WHERE nr.notice_id = n.id AND nr.user_id = ?
+           )""",
+        (user_id,),
+    ).fetchone()[0]
+
     return render_template(
         "dashboard.html",
         stats=stats, buildings=buildings, overdue=overdue,
@@ -444,6 +463,8 @@ def dashboard():
         alerts=alerts,
         renewal_alerts=renewal_alerts_detail,
         deposit_alerts=deposit_alerts_detail,
+        recent_notices=recent_notices,
+        unread_notices=unread_notices,
     )
 
 
@@ -2149,6 +2170,170 @@ def ledger_match(lid):
     ).fetchall()
 
     return render_template("ledger_match.html", entry=entry, candidates=candidates)
+
+
+# ============================================================
+# 라우트: 공지사항
+# ============================================================
+NOTICE_CATEGORIES = {
+    "general": ("일반", "secondary"),
+    "urgent": ("긴급", "danger"),
+    "maintenance": ("점검", "warning"),
+    "rent": ("수납", "info"),
+}
+
+
+@app.route("/notices")
+@login_required
+def notice_list():
+    db = get_db()
+    category = request.args.get("category", "")
+    building_id = request.args.get("building", "")
+
+    query = """
+        SELECT n.*, b.name as building_name,
+               (SELECT COUNT(*) FROM notice_reads nr WHERE nr.notice_id = n.id AND nr.user_id = ?) as is_read
+        FROM notices n
+        LEFT JOIN buildings b ON b.id = n.target_building_id
+    """
+    params = [session.get("user_id")]
+    where = []
+    if category:
+        where.append("n.category = ?")
+        params.append(category)
+    if building_id:
+        where.append("n.target_building_id = ?")
+        params.append(building_id)
+    if where:
+        query += " WHERE " + " AND ".join(where)
+    query += " ORDER BY n.is_pinned DESC, n.created_at DESC"
+
+    notices = db.execute(query, params).fetchall()
+    buildings = db.execute("SELECT id, name FROM buildings ORDER BY name").fetchall()
+    return render_template(
+        "notice_list.html", notices=notices, buildings=buildings,
+        categories=NOTICE_CATEGORIES,
+        sel_category=category, sel_building=building_id,
+    )
+
+
+@app.route("/notices/add", methods=["GET", "POST"])
+@login_required
+def notice_add():
+    db = get_db()
+    if request.method == "POST":
+        title = request.form.get("title", "").strip()
+        body = request.form.get("body", "").strip()
+        category = request.form.get("category", "general")
+        is_pinned = 1 if request.form.get("is_pinned") else 0
+        target_building_id = request.form.get("target_building_id") or None
+
+        if not title or not body:
+            flash("제목과 내용을 입력하세요.", "danger")
+            return redirect(url_for("notice_add"))
+
+        db.execute(
+            """INSERT INTO notices (title, body, category, is_pinned, target_building_id, created_by)
+               VALUES (?, ?, ?, ?, ?, ?)""",
+            (title, body, category, is_pinned, target_building_id, g.user["name"]),
+        )
+        db.commit()
+        flash("공지가 등록되었습니다.", "success")
+        return redirect(url_for("notice_list"))
+
+    buildings = db.execute("SELECT id, name FROM buildings ORDER BY name").fetchall()
+    return render_template("notice_form.html", buildings=buildings,
+                           categories=NOTICE_CATEGORIES, notice=None)
+
+
+@app.route("/notices/<int:nid>/view")
+@login_required
+def notice_view(nid):
+    db = get_db()
+    notice = db.execute(
+        """SELECT n.*, b.name as building_name
+           FROM notices n
+           LEFT JOIN buildings b ON b.id = n.target_building_id
+           WHERE n.id = ?""",
+        (nid,),
+    ).fetchone()
+    if not notice:
+        abort(404)
+
+    # 읽음 처리
+    user_id = session.get("user_id")
+    existing = db.execute(
+        "SELECT id FROM notice_reads WHERE notice_id = ? AND user_id = ?",
+        (nid, user_id),
+    ).fetchone()
+    if not existing:
+        db.execute(
+            "INSERT INTO notice_reads (notice_id, user_id) VALUES (?, ?)",
+            (nid, user_id),
+        )
+        db.commit()
+
+    return render_template("notice_view.html", notice=notice,
+                            categories=NOTICE_CATEGORIES)
+
+
+@app.route("/notices/<int:nid>/edit", methods=["GET", "POST"])
+@login_required
+def notice_edit(nid):
+    db = get_db()
+    notice = db.execute("SELECT * FROM notices WHERE id = ?", (nid,)).fetchone()
+    if not notice:
+        abort(404)
+
+    if request.method == "POST":
+        title = request.form.get("title", "").strip()
+        body = request.form.get("body", "").strip()
+        category = request.form.get("category", "general")
+        is_pinned = 1 if request.form.get("is_pinned") else 0
+        target_building_id = request.form.get("target_building_id") or None
+
+        if not title or not body:
+            flash("제목과 내용을 입력하세요.", "danger")
+            return redirect(url_for("notice_edit", nid=nid))
+
+        db.execute(
+            """UPDATE notices SET title=?, body=?, category=?, is_pinned=?,
+               target_building_id=?, updated_at=datetime('now','localtime')
+               WHERE id=?""",
+            (title, body, category, is_pinned, target_building_id, nid),
+        )
+        db.commit()
+        flash("공지가 수정되었습니다.", "success")
+        return redirect(url_for("notice_view", nid=nid))
+
+    buildings = db.execute("SELECT id, name FROM buildings ORDER BY name").fetchall()
+    return render_template("notice_form.html", buildings=buildings,
+                           categories=NOTICE_CATEGORIES, notice=notice)
+
+
+@app.route("/notices/<int:nid>/delete", methods=["POST"])
+@login_required
+def notice_delete(nid):
+    db = get_db()
+    db.execute("DELETE FROM notice_reads WHERE notice_id = ?", (nid,))
+    db.execute("DELETE FROM notices WHERE id = ?", (nid,))
+    db.commit()
+    flash("공지가 삭제되었습니다.", "success")
+    return redirect(url_for("notice_list"))
+
+
+@app.route("/notices/<int:nid>/pin", methods=["POST"])
+@login_required
+def notice_toggle_pin(nid):
+    db = get_db()
+    notice = db.execute("SELECT is_pinned FROM notices WHERE id = ?", (nid,)).fetchone()
+    if not notice:
+        abort(404)
+    new_val = 0 if notice["is_pinned"] else 1
+    db.execute("UPDATE notices SET is_pinned=? WHERE id=?", (new_val, nid))
+    db.commit()
+    flash("고정 상태가 변경되었습니다.", "success")
+    return redirect(url_for("notice_list"))
 
 
 # ============================================================

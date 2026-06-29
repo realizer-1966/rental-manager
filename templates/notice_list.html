@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}공지사항 - 임대관리{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4><i class="bi bi-megaphone-fill"></i> 공지사항</h4>
+    <a href="{{ url_for('notice_add') }}" class="btn btn-primary btn-sm">
+        <i class="bi bi-plus-circle"></i> 공지 작성
+    </a>
+</div>
+
+<!-- 필터 -->
+<form method="get" class="row g-2 mb-3">
+    <div class="col-auto">
+        <select name="category" class="form-select form-select-sm">
+            <option value="">전체 카테고리</option>
+            {% for key, (label, color) in categories.items() %}
+            <option value="{{ key }}" {% if sel_category == key %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-auto">
+        <select name="building" class="form-select form-select-sm">
+            <option value="">전체 건물</option>
+            {% for b in buildings %}
+            <option value="{{ b.id }}" {% if sel_building == b.id|string %}selected{% endif %}>{{ b.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-auto">
+        <button type="submit" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-funnel"></i> 필터
+        </button>
+        <a href="{{ url_for('notice_list') }}" class="btn btn-outline-secondary btn-sm">초기화</a>
+    </div>
+</form>
+
+{% if notices %}
+<div class="list-group">
+    {% for n in notices %}
+    <a href="{{ url_for('notice_view', nid=n.id) }}"
+       class="list-group-item list-group-item-action {% if not n.is_read %}list-group-item-warning{% endif %} {% if n.is_pinned %}border-start border-3 border-primary{% endif %}">
+        <div class="d-flex justify-content-between align-items-start">
+            <div class="flex-grow-1">
+                {% if n.is_pinned %}
+                <i class="bi bi-pin-angle-fill text-primary" title="고정"></i>
+                {% endif %}
+                <span class="badge bg-{{ categories[n.category][1] }} me-1">{{ categories[n.category][0] }}</span>
+                <strong>{{ n.title }}</strong>
+                {% if not n.is_read %}
+                <span class="badge bg-danger">NEW</span>
+                {% endif %}
+                {% if n.building_name %}
+                <span class="badge bg-light text-dark">{{ n.building_name }}</span>
+                {% endif %}
+            </div>
+            <small class="text-muted text-nowrap">{{ n.created_at[:16] }}</small>
+        </div>
+        <div class="text-muted small mt-1 text-truncate">{{ n.body[:80] }}{% if n.body|length > 80 %}...{% endif %}</div>
+    </a>
+    {% endfor %}
+</div>
+{% else %}
+<div class="text-center text-muted py-5">
+    <i class="bi bi-inbox fs-1"></i>
+    <p class="mt-2">공지사항이 없습니다.</p>
+</div>
+{% endif %}
+{% endblock %}
